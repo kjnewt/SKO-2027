@@ -1,0 +1,629 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Riverside Building B</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+[hidden]{display:none!important}
+img{max-width:100%}
+/* Layout: session map on top, then a two-column work area: the table's device on the left, facilitator notes on the right. Stacks on phones. */
+:root{
+  --bg:#EEF2F6; --surface:#FBFCFD; --sunk:#E3E9EF; --fg:#0F2236; --muted:#4C5F72; --line:#CFD9E3;
+  --navy:#003054; --navy-fg:#F2F6FA; --navy-muted:#B9CBDD; --blue:#0063A3; --gold:#FBAD26; --gold-ink:#3A2600;
+  --good:#1E7B4B; --good-bg:#E2F3EA; --bad:#B4372C; --bad-bg:#F8E4E1; --warn-bg:#FFF2D6;
+  --font:'Open Sans', Arial, sans-serif; --mono:'IBM Plex Mono', 'Courier New', monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0A1521; --surface:#112235; --sunk:#0D1B2B; --fg:#E4ECF4; --muted:#9DB1C5; --line:#24405D;
+  --navy:#002440; --navy-fg:#F2F6FA; --navy-muted:#A9BED3; --blue:#5AAEE8; --gold:#FBAD26; --gold-ink:#3A2600;
+  --good:#5BC98C; --good-bg:#12352A; --bad:#F08A7E; --bad-bg:#3A1D1C; --warn-bg:#3A2E12; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0A1521; --surface:#112235; --sunk:#0D1B2B; --fg:#E4ECF4; --muted:#9DB1C5; --line:#24405D;
+  --navy:#002440; --navy-fg:#F2F6FA; --navy-muted:#A9BED3; --blue:#5AAEE8; --gold:#FBAD26; --gold-ink:#3A2600;
+  --good:#5BC98C; --good-bg:#12352A; --bad:#F08A7E; --bad-bg:#3A1D1C; --warn-bg:#3A2E12; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:16px;line-height:1.5;margin:0}
+.wrap{max-width:1240px;margin:0 auto;padding-block:24px 64px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));display:flex;flex-direction:column;gap:20px}
+h1,h2,h3{text-wrap:balance;margin:0;line-height:1.2}
+p{margin:0}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--blue)}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+button{font:inherit;cursor:pointer}
+button:focus-visible,textarea:focus-visible,input:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+
+/* header */
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+.top h1{font-size:clamp(24px,3.4vw,34px);font-weight:800;color:var(--fg)}
+.top p{color:var(--muted);max-width:62ch}
+.toggles{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:8px 14px;border-radius:8px;font-weight:600;font-size:14px}
+.btn[aria-pressed="true"]{background:var(--navy);color:var(--navy-fg);border-color:var(--navy)}
+
+/* session map */
+.map{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface)}
+.stop{padding:12px 14px;border:0;border-left:1px solid var(--line);background:transparent;color:var(--fg);text-align:left;display:flex;flex-direction:column;gap:2px;min-width:0}
+.stop:first-child{border-left:0}
+.stop .t{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.stop .n{font-weight:700;font-size:15px}
+.stop .o{font-size:12px;color:var(--muted)}
+.stop[aria-current="step"]{background:var(--navy);color:var(--navy-fg)}
+.stop[aria-current="step"] .t,.stop[aria-current="step"] .o{color:var(--navy-muted)}
+.stop .tag{display:inline-block;align-self:flex-start;margin-top:4px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:99px;background:var(--gold);color:var(--gold-ink)}
+@media (max-width:760px){.map{grid-template-columns:1fr}.stop{border-left:0;border-top:1px solid var(--line)}.stop:first-child{border-top:0}}
+
+/* work area */
+.work{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:20px;align-items:start}
+.work.nonotes{grid-template-columns:minmax(0,1fr)}
+@media (max-width:980px){.work{grid-template-columns:minmax(0,1fr)}}
+
+/* the table's device */
+.device{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden;min-width:0}
+.dbar{background:var(--navy);color:var(--navy-fg);padding:12px 18px;display:flex;flex-wrap:wrap;gap:10px 24px;align-items:center;justify-content:space-between}
+.dbar .who{font-weight:700}
+.dbar .who span{color:var(--navy-muted);font-weight:400}
+.meters{display:flex;gap:20px;flex-wrap:wrap}
+.meter{display:flex;flex-direction:column;line-height:1.2}
+.meter small{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--navy-muted)}
+.meter b{font-family:var(--mono);font-size:18px}
+.meter b.low{color:#FF9D8F}
+.mbar{height:6px;background:#0B3E66}
+.mbar i{display:block;height:100%;background:var(--gold);transition:width .6s ease}
+.screen{padding:24px;display:flex;flex-direction:column;gap:18px}
+.screen h2{font-size:24px;font-weight:800}
+.lead{font-size:16px;color:var(--muted);max-width:68ch}
+.scene{font-family:var(--mono);font-size:13px;color:var(--muted)}
+.primary{background:var(--blue);color:#fff;border:0;padding:12px 20px;border-radius:10px;font-weight:700;font-size:16px;align-self:flex-start}
+:root[data-theme="dark"] .primary{color:#06213A}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .primary{color:#06213A}}
+.primary:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.hint{font-size:14px;color:var(--muted)}
+
+/* brief */
+.facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.fact{background:var(--sunk);border-radius:10px;padding:12px 14px}
+.fact small{display:block;font-size:12px;color:var(--muted)}
+.fact b{font-family:var(--mono);font-size:18px}
+@media (max-width:620px){.facts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.roles{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
+.role{border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:14px}
+.role b{display:block;font-size:15px}
+.rounds{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.rcard{border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:4px}
+.rcard .k{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--blue)}
+.rcard b{font-size:17px}
+.rcard p{font-size:14px;color:var(--muted)}
+@media (max-width:700px){.rounds{grid-template-columns:1fr}}
+
+/* round 1 cards */
+.events{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (max-width:620px){.events{grid-template-columns:1fr}}
+.ev{position:relative;text-align:left;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:12px;padding:14px 14px 14px 60px;display:flex;flex-direction:column;gap:4px;min-height:110px}
+.ev:hover{border-color:var(--blue)}
+.ev b{font-size:16px}
+.ev span{font-size:14px;color:var(--muted)}
+.ev .num{position:absolute;left:14px;top:14px;width:34px;height:34px;border-radius:50%;border:2px dashed var(--line);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:600;color:var(--muted)}
+.ev.on{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue) inset}
+.ev.on .num{border:0;background:var(--blue);color:#fff}
+
+/* reveal tables */
+.reveal{display:flex;flex-direction:column;gap:10px}
+.ritem{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:12px;align-items:start;border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.ritem .rk{font-family:var(--mono);font-weight:600;font-size:20px;color:var(--blue)}
+.ritem p{font-size:14px;color:var(--muted)}
+.ritem b{font-size:15px}
+.pill{font-size:12px;font-weight:700;padding:3px 10px;border-radius:99px;white-space:nowrap}
+.pill.good{background:var(--good-bg);color:var(--good)}
+.pill.bad{background:var(--bad-bg);color:var(--bad)}
+.pill.mid{background:var(--warn-bg);color:var(--fg)}
+.scorebox{display:flex;flex-wrap:wrap;gap:12px 28px;align-items:center;background:var(--sunk);border-radius:12px;padding:14px 18px}
+.scorebox .big{font-family:var(--mono);font-size:30px;font-weight:600}
+.scorebox small{display:block;font-size:12px;color:var(--muted)}
+.callout{background:var(--warn-bg);border-radius:12px;padding:14px 16px;font-size:15px}
+.callout b{display:block;margin-bottom:2px}
+
+/* crisis */
+.alarm{border-radius:12px;overflow:hidden;border:2px solid var(--bad)}
+.stripe{height:14px;background:repeating-linear-gradient(45deg,var(--gold) 0 14px,#0B1622 14px 28px);animation:slide 1.2s linear infinite}
+@keyframes slide{to{background-position:40px 0}}
+@media (prefers-reduced-motion: reduce){.stripe{animation:none}}
+.alarm .body{padding:14px 16px;background:var(--bad-bg);display:flex;flex-direction:column;gap:6px}
+.alarm .body b{color:var(--bad);font-size:13px;letter-spacing:.1em;text-transform:uppercase}
+.alarm .body p{font-size:15px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px}
+.tile{border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:10px;padding:10px 12px;text-align:left;font-size:14px;font-weight:600;display:flex;gap:8px;align-items:center}
+.tile .box{width:18px;height:18px;border-radius:4px;border:2px solid var(--line);flex:none}
+.tile.on{border-color:var(--blue);background:color-mix(in srgb,var(--blue) 10%,var(--surface))}
+.tile.on .box{background:var(--blue);border-color:var(--blue)}
+.chain{display:flex;flex-direction:column;gap:0}
+.link{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-top:0;background:var(--surface);color:var(--fg);text-align:left;font-size:14px}
+.link:first-child{border-top:1px solid var(--line);border-radius:10px 10px 0 0}
+.link:last-child{border-radius:0 0 10px 10px}
+.link .i{font-family:var(--mono);color:var(--muted)}
+.link .d{font-family:var(--mono);font-size:13px;color:var(--muted);white-space:nowrap}
+.link.on{background:color-mix(in srgb,var(--gold) 22%,var(--surface));box-shadow:inset 4px 0 0 var(--gold)}
+.link.fixed{cursor:default}
+.secthead{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.secthead h3{font-size:17px}
+.secthead span{font-size:13px;color:var(--muted)}
+
+/* round 3 */
+.ccards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.cc{border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:12px;padding:12px 14px;text-align:left;display:flex;flex-direction:column;gap:4px}
+.cc b{font-size:15px}
+.cc span{font-size:13px;color:var(--muted)}
+.cc .lane{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--blue)}
+.cc.on{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue) inset}
+textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:10px;padding:12px;font:inherit;font-size:15px;background:var(--surface);color:var(--fg);resize:vertical}
+.prompts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.prompts div{background:var(--sunk);border-radius:10px;padding:10px 12px;font-size:13px;color:var(--muted)}
+.prompts b{display:block;color:var(--fg);font-size:14px}
+@media (max-width:620px){.prompts{grid-template-columns:1fr}}
+.sparky{border-radius:14px;background:var(--navy);color:var(--navy-fg);padding:18px;display:flex;flex-direction:column;gap:12px}
+.sparky .q{font-size:17px;line-height:1.45}
+.sparky small{color:var(--navy-muted);font-size:12px}
+.bars{display:flex;flex-direction:column;gap:8px}
+.bar{display:grid;grid-template-columns:150px minmax(0,1fr) 54px;gap:10px;align-items:center;font-size:13px}
+.bar .track{height:10px;border-radius:5px;background:#0B3E66;overflow:hidden}
+.bar .track i{display:block;height:100%;background:var(--gold)}
+.bar .v{font-family:var(--mono);text-align:right}
+.loop{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.loop div{background:var(--sunk);border-radius:10px;padding:10px;font-size:13px;color:var(--muted)}
+.loop b{display:block;color:var(--fg);font-size:14px}
+@media (max-width:700px){.loop{grid-template-columns:1fr}}
+
+/* results */
+.obj{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.ob{border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:6px}
+.ob small{font-size:12px;color:var(--muted)}
+.ob b{font-size:16px}
+.ob .s{font-family:var(--mono);font-size:28px;font-weight:600}
+.ob .track{height:8px;background:var(--sunk);border-radius:4px;overflow:hidden}
+.ob .track i{display:block;height:100%;background:var(--blue)}
+@media (max-width:700px){.obj{grid-template-columns:1fr}}
+.badges{display:flex;flex-wrap:wrap;gap:8px}
+.badge{border:1px solid var(--line);border-radius:99px;padding:6px 12px;font-size:13px;font-weight:600;color:var(--muted)}
+.badge.got{background:var(--gold);color:var(--gold-ink);border-color:var(--gold)}
+.lb{width:100%;border-collapse:collapse;font-size:14px}
+.lb td,.lb th{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left}
+.lb th{font-size:12px;color:var(--muted);font-weight:600}
+.lb td.n{font-family:var(--mono);text-align:right}
+.lb th.n{text-align:right}
+.lb tr.me td{background:color-mix(in srgb,var(--gold) 20%,var(--surface));font-weight:700}
+
+/* facilitator notes */
+.notes{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:14px;position:sticky;top:calc(env(safe-area-inset-top, 0px) + 12px)}
+@media (max-width:980px){.notes{position:static}}
+.notes h3{font-size:18px}
+.nrow{display:flex;flex-direction:column;gap:3px;padding-top:12px;border-top:1px solid var(--line)}
+.nrow small{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.nrow p{font-size:14px}
+.nrow.say p{font-style:italic}
+.objchip{align-self:flex-start;font-size:12px;font-weight:700;padding:4px 10px;border-radius:99px;background:var(--gold);color:var(--gold-ink)}
+.validate{background:var(--warn-bg);border-radius:10px;padding:10px 12px;font-size:13px}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <p class="eyebrow">SKO 2027 · Americas Team Time · Playable draft</p>
+      <h1>Riverside Building B: the Team Time activity</h1>
+      <p>One project, three rounds, one objective per round. Play it as a table would. Facilitator notes on the right explain what the host says and why each round works.</p>
+    </div>
+    <div class="toggles">
+      <button class="btn" id="notesBtn" aria-pressed="true">Facilitator notes</button>
+      <button class="btn" id="resetBtn">Restart</button>
+    </div>
+  </header>
+
+  <nav class="map" id="map" aria-label="Session map"></nav>
+
+  <div class="work" id="work">
+    <section class="device" aria-label="Table app">
+      <div class="dbar">
+        <p class="who">Table 12 <span>· Riverside Building B</span></p>
+        <div class="meters">
+          <div class="meter"><small>Project margin</small><b id="mMargin" class="mono">$3,200,000</b></div>
+          <div class="meter"><small>Table score</small><b id="mScore" class="mono">0 / 300</b></div>
+        </div>
+      </div>
+      <div class="mbar"><i id="mBar" style="width:100%"></i></div>
+      <div class="screen" id="screen"></div>
+    </section>
+    <aside class="notes" id="notes" aria-label="Facilitator notes"></aside>
+  </div>
+</div>
+
+<script>
+(function(){
+const START_MARGIN = 3200000;
+const fmt = n => (n<0?'-':'') + '$' + Math.abs(Math.round(n)).toLocaleString('en-US');
+
+/* ---------- content ---------- */
+const STOPS = [
+  {n:'Briefing', t:'8:00 to 8:15', o:'Meet the project'},
+  {n:'Round 1 · Walk the Site', t:'8:15 to 8:40', o:'Objective: Jobsite awareness', tag:'Jobsite awareness'},
+  {n:'Round 2 · Follow the Data', t:'8:40 to 9:10', o:'Objective: Break down silos', tag:'Break silos'},
+  {n:'Round 3 · Make the Case', t:'9:10 to 9:40', o:'Objective: Beyond point solutions', tag:'Beyond point solutions'},
+  {n:'Results and finals', t:'9:40 to 10:00', o:'Leaderboard, Golden Hard Hat'}
+];
+
+const EVENTS = [
+  {id:'inspect', title:'Rebar inspection not signed off', body:'Ten concrete trucks for the Level 3 deck pour leave the plant at 7:15. The city inspector has not signed the rebar.', rank:1, cost:38000,
+   why:'Hard deadline in 30 minutes and money already moving. Call the plant to hold the trucks, then get the inspector on site. A rejected pour wastes 90 yards of concrete and idles a crew of 14.'},
+  {id:'revc', title:'Drawings in the field are out of date', body:'The MEP foreman laid out the Level 3 floor sleeves from Rev C. The office issued Rev D yesterday with 40 penetrations moved.', rank:2, cost:62000,
+   why:'It is tied to the same pour. Once concrete goes in, the mistake is permanent: about $1,200 to core-drill each penetration plus a structural review. It looks like paperwork, and it is the costliest problem on the list.'},
+  {id:'steel', title:'Steel shop drawings due at noon', body:'The fabricator needs approved Level 4 shop drawings by noon or it loses its shop slot.', rank:3, cost:120000,
+   why:'Big, but there is time until noon. The PM chases the engineer this morning. A lost slot means a two-week steel slip and liquidated damages exposure.'},
+  {id:'crane', title:'Tower crane booked 7 to 3', body:'The crane is booked all day at $35,000. If the pour slips, every pick has to be resequenced.', rank:4, cost:35000,
+   why:'Its fate depends on the pour decision. Once the pour is protected, the super resequences picks around it.'},
+  {id:'rain', title:'Rain after 2 p.m.', body:'80 percent chance of rain after 2. Finishing the deck takes about four hours.', rank:5, cost:20000,
+   why:'Manageable if the pour starts on time, which is exactly why the inspection problem comes first.'},
+  {id:'owner', title:'Owner’s rep wants a 10 a.m. walk', body:'The owner’s rep from Riverside Properties wants to walk the site at 10 to prepare for an investor meeting.', rank:6, cost:0,
+   why:'Important relationship, and it can move to 1 p.m. The owner’s rep would rather see the deck poured than watch it go wrong.'}
+];
+const DISPLAY_ORDER = ['rain','revc','owner','inspect','crane','steel'];
+
+const ROLES = [
+  {id:'se', name:'Structural engineer', need:true, why:'Re-checks anchor bolts and base plates on the moved caissons.'},
+  {id:'fab', name:'Steel fabricator', need:true, why:'Starts cutting 800 tons of steel in 48 hours, to the old grid.'},
+  {id:'civil', name:'Civil and site contractor', need:true, why:'Reroutes the utility corridor and re-grades around the strike.'},
+  {id:'survey', name:'Surveyor', need:true, why:'Shoots the new caisson positions so everyone works from real locations.'},
+  {id:'op', name:'Excavator operator', need:true, why:'Needs the new dig limits and grades before the machine moves again.'},
+  {id:'mep', name:'MEP subcontractor', need:true, why:'Mechanical risers now collide with the relocated caissons.'},
+  {id:'super', name:'Superintendent', need:true, why:'Resequences crews, crane picks and the pour schedule.'},
+  {id:'owner', name:'Owner’s rep', need:true, why:'Must hear about schedule and cost risk the same day, not at the next monthly meeting.'},
+  {id:'int', name:'Interior finishes sub', need:false, why:'Works on the upper floors months from now. Not affected this week.'},
+  {id:'land', name:'Landscape architect', need:false, why:'Plaza and planting work comes at the end of the job. Not affected this week.'}
+];
+
+const CHAIN = [
+  {id:1, step:'Surveyor shoots the new caisson positions on a field controller', d:'same day', risk:false},
+  {id:2, step:'Survey file is emailed to the office as a spreadsheet', d:'0.5 day', risk:true, why:'Field to office. The file leaves the jobsite and waits in someone’s inbox.'},
+  {id:3, step:'Engineer re-checks anchor bolts and issues a PDF', d:'2 days', risk:false},
+  {id:4, step:'GC project manager forwards the PDF to the fabricator', d:'0.5 day', risk:'half', why:'A forward, so versions can cross. Half credit: the format does not change here.'},
+  {id:5, step:'Fabricator’s detailer redraws shop drawings from the PDF', d:'3 days', risk:true, why:'Re-keying. Every number typed from a PDF is a chance for a new error.'},
+  {id:6, step:'Revised shop drawings go back to the engineer for approval', d:'2 days', risk:false},
+  {id:7, step:'New grades reach the excavator as paper stakes in the field', d:'1 day', risk:true, why:'Office to field. A digital design turns back into wood stakes and spray paint.'}
+];
+
+const CARDS = [
+  {id:'fieldlink', name:'Trimble FieldLink', lane:'Capture', desc:'Field layout and as-built capture straight from the model.'},
+  {id:'tbc', name:'Trimble Business Center', lane:'Capture', desc:'Processes survey and site data into usable surfaces.'},
+  {id:'connect', name:'Trimble Connect', lane:'Common data', desc:'One shared place for models, data and changes, field and office.'},
+  {id:'tekla', name:'Tekla Structures', lane:'Model', desc:'Constructible steel and concrete model that fabricators build from.'},
+  {id:'sysque', name:'SysQue', lane:'Model', desc:'Constructible MEP model for routing and prefab.'},
+  {id:'earthworks', name:'Trimble Earthworks', lane:'Execute', desc:'Machine control that puts design surfaces in the excavator cab.'},
+  {id:'pdf', name:'A better PDF markup app', lane:'Point fix', desc:'Faster redlines on drawings.'},
+  {id:'share', name:'A faster file-share link', lane:'Point fix', desc:'Big files arrive quicker by email.'}
+];
+const SAMPLE_PITCH = 'Today a 4.5 foot shift took nine days to reach your steel shop, and that put about $540,000 of your schedule at risk. With one shared source of truth, the survey shot in the field updates the steel model the same day, and the fabricator and the excavator work from the same data the office sees. Next time it costs you hours, not nine days, and your anchor tenant still moves in on time.';
+
+const NOTES = [
+  {obj:null, time:'8:00 to 8:15 · 15 minutes',
+   say:'“Every table is now the project team for Riverside Properties’ new office building. Same project, same deadline, ten very different jobs. By 10 a.m. we will know which teams kept it on schedule.”',
+   does:'Scan the table QR code, read the brief, hand out roles. The Table Captain (a sales manager) keeps time and taps Submit.',
+   why:'One shared project keeps the host’s story simple for 600 people. Putting every trade at one table means silos show up inside the table, where sellers can feel them.',
+   validate:'Project size, liquidated damages figure, margin and the role list.'},
+  {obj:'Jobsite awareness', time:'8:15 to 8:40 · 15 minutes play, 10 minutes debrief',
+   say:'“It is 6:45 a.m. You are the superintendent. Six problems are already waiting and you can handle them one at a time. What comes first?”',
+   does:'Rank the six problems in the order the superintendent would handle them, then lock it in.',
+   debrief:'“Which item would never come up in a discovery call, but costs the most?” Most tables rank the out-of-date drawings low. That is the pain our customers live with every day.',
+   why:'Sellers feel the pace and money of a real jobsite morning before they hear a single product name.',
+   validate:'A superintendent confirms the order, the reasons and the dollar figures.'},
+  {obj:'Break down silos', time:'8:40 to 9:10 · 2 minutes alarm, 18 minutes play, 10 minutes debrief',
+   say:'Sirens. The Crisis Vault unlocks on every device. “One strike, one shifted grid line, and eight companies need new information. Find them, then find where the information will break.”',
+   does:'Tap every role that needs new information in 48 hours. Then pick the three handoffs where the data is most likely to go stale or get lost.',
+   debrief:'“Where did the data break?” Every time it changed format or crossed between field and office. Nine days to reach the fabricator, who cuts steel in two.',
+   why:'The cost of silos shows up as days and dollars the table traces itself, before anyone says Trimble Connect.',
+   validate:'Handoff delays with a GC project manager and a steel detailer.'},
+  {obj:'Beyond point solutions', time:'9:10 to 9:40 · 20 minutes play, 10 minutes Sparky reveal',
+   say:'“Riverside Properties’ CFO is on the phone. She does not want to hear about software. She wants to know this never costs her nine days again. You have 60 seconds.”',
+   does:'Choose up to four tools for the fix, then write the 60-second answer to the CFO. Sparky scores it.',
+   debrief:'An SE walks the connected path on screen. The host reads the top answer. Ask: “What made that answer land with a CFO?”',
+   why:'Tables must choose between one more tool and a connected workflow, then say it in the owner’s language. That is the conversation we want in 2027 deals.',
+   validate:'Each product’s role in the loop with SEs. The CFO persona with sales leadership.'},
+  {obj:null, time:'9:40 to 10:00 · 20 minutes',
+   say:'Leaderboard on the big screen. Top three CFO answers read aloud. Golden Hard Hat to the winning table. Close with a real customer story.',
+   does:'Tables see their score by objective, their margin and their badges.',
+   why:'Scores by objective tell L&D where the field needs follow-up after SKO, so the session produces data, not only energy.',
+   validate:'Prize and recognition budget. Which customer story closes the session.'}
+];
+
+/* ---------- state ---------- */
+let S;
+function fresh(){return {step:0, margin:START_MARGIN, r1:{order:[], done:false, score:0, hits:[]}, r2:{roles:[], links:[], done:false, score:0, t0:null, secs:0, a:0, b:0, sp:0}, r3:{cards:[], pitch:'', done:false, build:0, pitch_s:{}, score:0, recover:0}, notes:true};}
+S = fresh();
+try{ const n = localStorage.getItem('rtb-notes'); if(n==='0') S.notes=false; }catch(e){}
+
+const $ = id => document.getElementById(id);
+const total = () => S.r1.score + S.r2.score + S.r3.score;
+
+function updateMeters(){
+  $('mMargin').textContent = fmt(S.margin);
+  $('mMargin').className = 'mono' + (S.margin < START_MARGIN*0.6 ? ' low':'');
+  $('mScore').textContent = total() + ' / 300';
+  $('mBar').style.width = Math.max(0, Math.min(100, S.margin/START_MARGIN*100)) + '%';
+}
+
+function renderMap(){
+  $('map').innerHTML = STOPS.map((s,i)=>`<button class="stop" data-go="${i}" ${i===S.step?'aria-current="step"':''}><span class="t">${s.t}</span><span class="n">${s.n}</span><span class="o">${s.o}</span></button>`).join('');
+  $('map').querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>go(+b.dataset.go));
+}
+
+function renderNotes(){
+  const n = NOTES[S.step];
+  $('work').classList.toggle('nonotes', !S.notes);
+  $('notes').hidden = !S.notes;
+  $('notesBtn').setAttribute('aria-pressed', S.notes);
+  $('notes').innerHTML = `
+    <p class="eyebrow">Facilitator notes</p>
+    <h3>${STOPS[S.step].n}</h3>
+    ${n.obj?`<span class="objchip">Objective: ${n.obj}</span>`:''}
+    <div class="nrow"><small>Time</small><p class="mono">${n.time}</p></div>
+    <div class="nrow say"><small>Host says</small><p>${n.say}</p></div>
+    <div class="nrow"><small>Tables do</small><p>${n.does}</p></div>
+    ${n.debrief?`<div class="nrow"><small>Debrief</small><p>${n.debrief}</p></div>`:''}
+    <div class="nrow"><small>Why it works</small><p>${n.why}</p></div>
+    <div class="validate"><b>Validate with SMEs:</b> ${n.validate}</div>`;
+}
+
+function go(i){ S.step=i; if(i===2 && !S.r2.t0) S.r2.t0=Date.now(); render(); window.scrollTo({top:0,behavior:'smooth'}); }
+
+/* ---------- screens ---------- */
+function brief(){
+  return `
+  <p class="scene">PROJECT BRIEF · OPENS ON EVERY DEVICE AFTER THE QR SCAN</p>
+  <h2>Riverside Commons, Building B</h2>
+  <p class="lead">A six-story office building on a busy downtown block, right next to the occupied Building A. Your table is the whole project team. The street stays open, Building A’s tenants keep working, and the anchor tenant has a signed move-in date.</p>
+  <div class="facts">
+    <div class="fact"><small>Contract</small><b>$64M</b></div>
+    <div class="fact"><small>GC margin at stake</small><b>$3.2M</b></div>
+    <div class="fact"><small>Late penalty</small><b>$25K/day</b></div>
+    <div class="fact"><small>Crane</small><b>$35K/day</b></div>
+  </div>
+  <div class="secthead"><h3>Roles at your table</h3><span>Ten seats. Double up if you need to.</span></div>
+  <div class="roles">
+    <div class="role"><b>Owner’s rep</b>Riverside Properties. Cares about tenant move-in and investors.</div>
+    <div class="role"><b>GC project manager</b>Owns the schedule, budget and margin.</div>
+    <div class="role"><b>Superintendent</b>Runs the site from 6 a.m.</div>
+    <div class="role"><b>Civil and site</b>Excavation, utilities, grades.</div>
+    <div class="role"><b>Structural engineer</b>Stamps the calcs. Says yes or no.</div>
+    <div class="role"><b>Steel fabricator</b>Cuts steel to the shop drawings.</div>
+    <div class="role"><b>MEP subcontractor</b>Ducts, pipes, risers, sleeves.</div>
+    <div class="role"><b>Trimble account team</b>Two or three sellers. You will need them in Round 3.</div>
+  </div>
+  <div class="secthead"><h3>Your morning, in three rounds</h3><span>Each round scores up to 100</span></div>
+  <div class="rounds">
+    <div class="rcard"><span class="k">Round 1 · Jobsite awareness</span><b>Walk the Site</b><p>Six problems before 7 a.m. Handle them in the right order.</p></div>
+    <div class="rcard"><span class="k">Round 2 · Break silos</span><b>Follow the Data</b><p>A crisis moves the grid. Find who needs to know and where the data breaks.</p></div>
+    <div class="rcard"><span class="k">Round 3 · Beyond point solutions</span><b>Make the Case</b><p>The owner’s CFO wants an answer. Build the fix and say it in 60 seconds.</p></div>
+  </div>
+  <button class="primary" data-act="next">Start Round 1</button>`;
+}
+
+function r1(){
+  const R = S.r1;
+  if(!R.done){
+    const cards = DISPLAY_ORDER.map(id=>{
+      const e = EVENTS.find(x=>x.id===id); const pos = R.order.indexOf(id);
+      return `<button class="ev ${pos>-1?'on':''}" data-ev="${id}" aria-pressed="${pos>-1}"><span class="num">${pos>-1?pos+1:''}</span><b>${e.title}</b><span>${e.body}</span></button>`;
+    }).join('');
+    return `
+    <p class="scene">6:45 A.M. · SUPERINTENDENT’S TRAILER · LEVEL 3 DECK POUR TODAY</p>
+    <h2>Round 1 · Walk the Site</h2>
+    <p class="lead">Six problems landed before the 7:00 huddle. You can handle one at a time. Tap them in the order the superintendent should deal with them. Tap again to undo.</p>
+    <div class="events">${cards}</div>
+    <div class="row"><button class="primary" data-act="r1lock" ${R.order.length<6?'disabled':''}>Lock in our order</button><span class="hint">${R.order.length} of 6 ranked</span></div>`;
+  }
+  const items = [...EVENTS].sort((a,b)=>a.rank-b.rank).map(e=>{
+    const yours = R.order.indexOf(e.id)+1, diff = Math.abs(yours-e.rank);
+    const pill = diff===0?'<span class="pill good">Exact · 16 pts</span>':diff===1?'<span class="pill mid">Off by one · 8 pts</span>':`<span class="pill bad">You ranked it #${yours}</span>`;
+    return `<div class="ritem"><span class="rk">#${e.rank}</span><div><b>${e.title}</b><p>${e.why}</p></div>${pill}</div>`;
+  }).join('');
+  const lost = R.hits.reduce((s,h)=>s+h.cost,0);
+  return `
+    <p class="scene">7:00 A.M. · THE SUPERINTENDENT’S CALL</p>
+    <h2>How the superintendent would handle it</h2>
+    <div class="scorebox"><div><small>Round 1 score</small><span class="big">${R.score}</span> / 100</div><div><small>Margin lost to late calls</small><span class="big">${fmt(-lost)}</span></div>${R.order.indexOf('revc')<2?'<span class="pill good">Badge: Eagle Eye</span>':''}</div>
+    <div class="reveal">${items}</div>
+    <div class="callout"><b>Debrief question for the table</b>Which of these would a customer never mention in a discovery call, but feels every day?</div>
+    <button class="primary" data-act="next">Go to Round 2</button>`;
+}
+
+function r2(){
+  const R = S.r2;
+  const alarm = `<div class="alarm"><div class="stripe"></div><div class="body"><b>Crisis Vault unlocked · 10:14 a.m.</b><p>The excavator digging the new utility tunnel hits an abandoned fuel line that is not on the utility plans, four feet higher than anything shown. The fire marshal closes the area. To clear a new utility route, the remaining eight caissons on the north line must move <b style="display:inline;color:inherit;letter-spacing:0;text-transform:none;font-size:inherit">4.5 feet north</b>. The steel fabricator starts cutting 800 tons of steel in 48 hours, to the old grid.</p></div></div>`;
+  if(!R.done){
+    const tiles = ROLES.map(r=>`<button class="tile ${R.roles.includes(r.id)?'on':''}" data-role="${r.id}" aria-pressed="${R.roles.includes(r.id)}"><span class="box"></span>${r.name}</button>`).join('');
+    const links = CHAIN.map((c,i)=>`<button class="link ${R.links.includes(c.id)?'on':''}" data-link="${c.id}" aria-pressed="${R.links.includes(c.id)}"><span class="i">${i+1}</span><span>${c.step}</span><span class="d">${c.d}</span></button>`).join('');
+    return `
+    <p class="scene">ROUND 2 · THE TURNING POINT</p>
+    <h2>Round 2 · Follow the Data</h2>
+    ${alarm}
+    <div class="secthead"><h3>A. Who needs new information in the next 48 hours?</h3><span>Tap every role that does</span></div>
+    <div class="tiles">${tiles}</div>
+    <div class="secthead"><h3>B. Here is how the change travels today. Where will it break?</h3><span>Pick 3 handoffs · ${R.links.length} of 3</span></div>
+    <div class="chain">${links}</div>
+    <div class="row"><button class="primary" data-act="r2lock" ${(R.roles.length<1||R.links.length!==3)?'disabled':''}>Submit to Sparky</button><span class="hint">Faster submissions earn up to 20 speed points</span></div>`;
+  }
+  const roleRows = ROLES.map(r=>{
+    const picked = R.roles.includes(r.id);
+    const pill = r.need ? (picked?'<span class="pill good">Reached</span>':'<span class="pill bad">Missed</span>') : (picked?'<span class="pill bad">Not needed</span>':'<span class="pill good">Correctly left out</span>');
+    return `<div class="ritem"><span class="rk" style="font-size:15px">${r.need?'Yes':'No'}</span><div><b>${r.name}</b><p>${r.why}</p></div>${pill}</div>`;
+  }).join('');
+  const linkRows = CHAIN.filter(c=>c.risk).map(c=>{
+    const picked = R.links.includes(c.id);
+    return `<div class="ritem"><span class="rk">${c.id}</span><div><b>${c.step}</b><p>${c.why}</p></div>${picked?'<span class="pill good">You caught it</span>':'<span class="pill bad">Missed</span>'}</div>`;
+  }).join('');
+  return `
+    <p class="scene">10:40 A.M. · SPARKY’S READOUT</p>
+    <h2>Nine days for the change to reach the steel shop</h2>
+    <div class="scorebox"><div><small>Round 2 score</small><span class="big">${R.score}</span> / 100</div><div><small>Who needs to know</small><span class="big">${R.a}</span> / 40</div><div><small>Where it breaks</small><span class="big">${R.b}</span> / 40</div><div><small>Speed</small><span class="big">${R.sp}</span> / 20</div></div>
+    <div class="callout"><b>The cost of the silos</b>Add up the handoffs and the change takes about 9 days to reach the fabricator, who cuts steel in 2. Stop the shop or cut the wrong steel. Either way: 9 days × ($25K late penalty + $35K crane standby) = <b style="display:inline">$540,000 of exposure</b>, now on your margin. Round 3 is your chance to win it back.</div>
+    <div class="secthead"><h3>Who needed to know</h3></div>
+    <div class="reveal">${roleRows}</div>
+    <div class="secthead"><h3>Where the data breaks</h3><span>Every time it changes format or crosses between field and office</span></div>
+    <div class="reveal">${linkRows}</div>
+    <button class="primary" data-act="next">Go to Round 3</button>`;
+}
+
+function r3(){
+  const R = S.r3;
+  const cards = CARDS.map(c=>`<button class="cc ${R.cards.includes(c.id)?'on':''}" data-card="${c.id}" aria-pressed="${R.cards.includes(c.id)}" ${R.done?'disabled':''}><span class="lane">${c.lane}</span><b>${c.name}</b><span>${c.desc}</span></button>`).join('');
+  if(!R.done){
+    return `
+    <p class="scene">4:30 P.M. · PHONE CALL FROM RIVERSIDE PROPERTIES’ CFO</p>
+    <h2>Round 3 · Make the Case</h2>
+    <div class="callout"><b>The CFO, to your GC’s VP</b>“I don’t want to hear about software. I want to know this never costs us nine days again.” The VP turns to the Trimble account team at your table: you have 60 seconds.</div>
+    <div class="secthead"><h3>A. Build the fix</h3><span>Choose up to 4 · ${R.cards.length} of 4</span></div>
+    <div class="ccards">${cards}</div>
+    <div class="secthead"><h3>B. Your 60-second answer to the CFO</h3><span id="cc">${R.pitch.length} / 600</span></div>
+    <div class="prompts"><div><b>The risk</b>What nearly happened, in her terms</div><div><b>The outcome</b>Days, dollars, move-in day</div><div><b>Why connected</b>Why not one more tool</div></div>
+    <textarea id="pitch" maxlength="600" placeholder="Write it the way you would say it to a CFO.">${R.pitch.replace(/</g,'&lt;')}</textarea>
+    <div class="row"><button class="primary" data-act="r3lock" ${(R.cards.length<1||R.pitch.trim().length<40)?'disabled':''}>Submit to Sparky</button><button class="btn" data-act="sample">Fill a sample answer</button></div>`;
+  }
+  const p = R.pitch_s;
+  const bar = (label,v,max)=>`<div class="bar"><span>${label}</span><span class="track"><i style="width:${Math.round(v/max*100)}%"></i></span><span class="v">${v}/${max}</span></div>`;
+  return `
+    <p class="scene">5:00 P.M. · SPARKY REVIEWS YOUR ANSWER</p>
+    <h2>Did you sell a tool or a connected workflow?</h2>
+    <div class="scorebox"><div><small>Round 3 score</small><span class="big">${R.score}</span> / 100</div><div><small>Margin won back</small><span class="big">${fmt(R.recover)}</span></div>${p.loop?'<span class="pill good">Badge: Closed the Loop</span>':''}${p.business>=20?'<span class="pill good">Badge: Boardroom Ready</span>':''}</div>
+    <div class="sparky">
+      <small>SPARKY · TABLE 12</small>
+      <p class="q">“${p.roast}”</p>
+      <div class="bars">${bar('The fix you built',R.build,40)}${bar('Business outcome',p.business,25)}${bar('Connected value',p.connected,20)}${bar('Customer focus',p.customer,15)}</div>
+      <small>Demo scoring with simple rules. At SKO, Sparky reads every answer against this rubric.</small>
+    </div>
+    <div class="secthead"><h3>The connected path the SE walks on screen</h3><span>9 days becomes about 1</span></div>
+    <div class="loop">
+      <div><b>1 · Capture</b>Surveyor shoots the moved caissons with FieldLink.</div>
+      <div><b>2 · Share</b>Positions land in Trimble Connect for every partner.</div>
+      <div><b>3 · Model</b>Tekla model updates; engineer checks the change.</div>
+      <div><b>4 · Execute</b>Fabricator cuts from the model; Earthworks updates the cab.</div>
+      <div><b>5 · Inform</b>Owner’s rep sees the change and the new date the same day.</div>
+    </div>
+    <div class="secthead"><h3>Your fix</h3></div>
+    <div class="ccards">${cards}</div>
+    <button class="primary" data-act="next">See results</button>`;
+}
+
+function results(){
+  const tiers = [
+    {k:'Jobsite awareness', r:'Round 1', s:S.r1.score},
+    {k:'Break down silos', r:'Round 2', s:S.r2.score},
+    {k:'Beyond point solutions', r:'Round 3', s:S.r3.score}
+  ];
+  const badges = [
+    {n:'Eagle Eye', got:S.r1.done && S.r1.order.indexOf('revc')<2, d:'Caught the out-of-date drawings'},
+    {n:'No One Left Out', got:S.r2.done && ROLES.filter(r=>r.need).every(r=>S.r2.roles.includes(r.id)), d:'Reached every role'},
+    {n:'Closed the Loop', got:S.r3.done && S.r3.pitch_s.loop, d:'Capture, share, model, execute'},
+    {n:'Boardroom Ready', got:S.r3.done && S.r3.pitch_s.business>=20, d:'Spoke the CFO’s language'},
+    {n:'Margin Defender', got:S.r3.done && S.margin>=START_MARGIN*0.85, d:'Kept 85% of margin'}
+  ];
+  const sample = [['Table 14',271],['Table 31',248],['Table 52',229],['Table 7',204],['Table 27',163]];
+  const rows = [...sample.map(r=>({t:r[0],s:r[1]})), {t:'Table 12 (you)', s:total(), me:true}].sort((a,b)=>b.s-a.s)
+    .map((r,i)=>`<tr class="${r.me?'me':''}"><td class="n" style="text-align:left">${i+1}</td><td>${r.t}</td><td class="n">${r.s}</td></tr>`).join('');
+  return `
+    <p class="scene">9:40 A.M. · THE BIG SCREEN</p>
+    <h2>Table 12 results</h2>
+    <div class="scorebox"><div><small>Total</small><span class="big">${total()}</span> / 300</div><div><small>Margin left</small><span class="big">${fmt(S.margin)}</span></div><div><small>Kept</small><span class="big">${Math.round(S.margin/START_MARGIN*100)}%</span></div></div>
+    <div class="obj">${tiers.map(t=>`<div class="ob"><small>${t.r}</small><b>${t.k}</b><span class="s">${t.s}</span><span class="track"><i style="width:${t.s}%"></i></span></div>`).join('')}</div>
+    <div class="secthead"><h3>Badges</h3></div>
+    <div class="badges">${badges.map(b=>`<span class="badge ${b.got?'got':''}" title="${b.d}">${b.got?'Earned: ':''}${b.n}</span>`).join('')}</div>
+    <div class="secthead"><h3>Ballroom leaderboard</h3><span>Other tables are sample data for the demo</span></div>
+    <div style="overflow-x:auto"><table class="lb"><tr><th>Rank</th><th>Table</th><th class="n">Score</th></tr>${rows}</table></div>
+    <button class="btn" data-act="reset">Play again</button>`;
+}
+
+/* ---------- scoring ---------- */
+function scoreR1(){
+  const R=S.r1; let pts=0; R.hits=[];
+  EVENTS.forEach(e=>{
+    const yours=R.order.indexOf(e.id)+1, d=Math.abs(yours-e.rank);
+    pts += d===0?16:d===1?8:0;
+    if(yours-e.rank>=2 && e.cost) R.hits.push({id:e.id,cost:e.cost});
+  });
+  if(R.order.indexOf('revc')<2) pts+=4;
+  R.score=Math.min(100,pts); R.done=true;
+  S.margin -= R.hits.reduce((s,h)=>s+h.cost,0);
+}
+function scoreR2(){
+  const R=S.r2; let a=0;
+  ROLES.forEach(r=>{ const p=R.roles.includes(r.id); if(r.need&&p)a+=5; if(!r.need&&p)a-=5; });
+  a=Math.max(0,Math.min(40,a));
+  let b=0; R.links.forEach(id=>{const c=CHAIN.find(x=>x.id===id); if(c.risk===true)b+=13; else if(c.risk==='half')b+=6;});
+  if(R.links.length===3 && R.links.every(id=>CHAIN.find(x=>x.id===id).risk===true)) b=40;
+  b=Math.min(40,b);
+  R.secs=Math.round((Date.now()-(R.t0||Date.now()))/1000);
+  const sp = R.secs<=360?20:R.secs<=600?15:10;
+  const missed = ROLES.filter(r=>r.need && !R.roles.includes(r.id)).length;
+  const extra = ROLES.filter(r=>!r.need && R.roles.includes(r.id)).length;
+  R.a=a; R.b=b; R.sp=sp; R.score=a+b+sp; R.done=true;
+  S.margin -= 540000 + missed*40000 + extra*10000;
+}
+function uniq(text,re){ const m=(text.match(re)||[]).map(s=>s.toLowerCase()); return new Set(m).size; }
+function scoreR3(){
+  const R=S.r3, c=R.cards, has=id=>c.includes(id);
+  const capture=has('fieldlink')||has('tbc'), model=has('tekla')||has('sysque'), exec=has('earthworks'), core=has('connect');
+  const distract=(has('pdf')?1:0)+(has('share')?1:0);
+  let build=(core?15:0)+(capture?10:0)+(model?8:0)+(exec?7:0)-distract*10;
+  R.build=Math.max(0,build);
+  const loop=core&&capture&&model&&exec;
+  const t=R.pitch;
+  let business=Math.min(25, uniq(t,/\$[\d,.]+[km]?|\bdollars?\b|\bdays?\b|\bweeks?\b|\bhours?\b|\bschedule\b|\bopen(s|ing)?\b|\btenants?\b|\binvestors?\b|\bmove[- ]in\b|\bbudget\b|\bcosts?\b|\bmargin\b|\bpenalt(y|ies)\b|\brisk\b|\bdelays?\b|\bon time\b/gi)*5);
+  let connected=Math.min(20, uniq(t,/\bconnect(ed|s)?\b|single source|one source|source of truth|same (data|model|information)|real[- ]time|\beveryone\b|field and (the )?office|office and (the )?field|in sync|\bshared\b|same day/gi)*5);
+  let customer=Math.min(15, uniq(t,/\byou\b|\byour\b|\briverside\b|\bboard\b|\bbuilding b\b/gi)*5);
+  const products=uniq(t,/fieldlink|tekla|trimble connect|business center|\btbc\b|earthworks|sysque/gi);
+  let pitch=business+connected+customer;
+  if(products>3) pitch=Math.max(0,pitch-10);
+  if(t.trim().length<150) pitch=Math.min(pitch,20);
+  let roast;
+  if(products>3) roast='That reads like a price sheet. She asked about nine days, not four logins.';
+  else if(distract>0 && !core) roast='A faster PDF is a faster way to send the wrong drawing. The silo is still there.';
+  else if(business<10) roast='Lovely workflow. The CFO still does not know what it saves her. Put a number on it.';
+  else if(connected<10) roast='You nailed the money and skipped the cause. What stops this from happening next month?';
+  else if(!loop) roast='Good answer, open loop. The data still has to walk from the field to the office on foot somewhere.';
+  else if(pitch>=50) roast='Boardroom ready. Days, dollars and one source of truth in under a minute. She is taking this to her board.';
+  else roast='Solid. Tighten it: one risk, one number, one reason connected beats one more tool.';
+  R.pitch_s={business,connected,customer,products,loop,roast};
+  R.score=Math.min(100,R.build+pitch);
+  R.recover = loop?480000 : core?240000 : (c.some(x=>x!=='pdf'&&x!=='share')?120000:0);
+  S.margin += R.recover; R.done=true;
+}
+
+/* ---------- render + events ---------- */
+function render(){
+  renderMap(); renderNotes(); updateMeters();
+  $('screen').innerHTML = [brief,r1,r2,r3,results][S.step]();
+  const sc=$('screen');
+  sc.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>act(b.dataset.act));
+  sc.querySelectorAll('[data-ev]').forEach(b=>b.onclick=()=>{const o=S.r1.order,id=b.dataset.ev,i=o.indexOf(id); i>-1?o.splice(i,1):o.push(id); render();});
+  sc.querySelectorAll('[data-role]').forEach(b=>b.onclick=()=>{toggle(S.r2.roles,b.dataset.role); render();});
+  sc.querySelectorAll('[data-link]').forEach(b=>b.onclick=()=>{const l=S.r2.links,id=+b.dataset.link,i=l.indexOf(id); if(i>-1)l.splice(i,1); else if(l.length<3)l.push(id); render();});
+  sc.querySelectorAll('[data-card]').forEach(b=>b.onclick=()=>{const c=S.r3.cards,id=b.dataset.card,i=c.indexOf(id); if(i>-1)c.splice(i,1); else if(c.length<4)c.push(id); render();});
+  const ta=$('pitch');
+  if(ta) ta.oninput=()=>{S.r3.pitch=ta.value; $('cc').textContent=ta.value.length+' / 600'; const btn=sc.querySelector('[data-act="r3lock"]'); btn.disabled=(S.r3.cards.length<1||ta.value.trim().length<40);};
+}
+function toggle(arr,v){const i=arr.indexOf(v); i>-1?arr.splice(i,1):arr.push(v);}
+function act(a){
+  if(a==='next') return go(Math.min(4,S.step+1));
+  if(a==='r1lock'){scoreR1(); return render();}
+  if(a==='r2lock'){scoreR2(); return render();}
+  if(a==='sample'){S.r3.pitch=SAMPLE_PITCH; return render();}
+  if(a==='r3lock'){scoreR3(); return render();}
+  if(a==='reset'){const n=S.notes; S=fresh(); S.notes=n; return render();}
+}
+$('notesBtn').onclick=()=>{S.notes=!S.notes; try{localStorage.setItem('rtb-notes',S.notes?'1':'0');}catch(e){} renderNotes();};
+$('resetBtn').onclick=()=>act('reset');
+render();
+})();
+</script>
+
+</body>
+</html>
